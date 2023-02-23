@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 surrealHttp = { path = "../surreal-http/" }
+json = "0.12.4"
