@@ -4,6 +4,7 @@ use std::env;
 use json::JsonValue::{self, Null};
 use json::object::{self};
 use surrealHttp::*;
+use std::collections::HashMap;
 
 fn get_input(prompt: String) -> String {
     print!("{} ", prompt);
@@ -11,6 +12,49 @@ fn get_input(prompt: String) -> String {
     let _= stdout().flush();
     stdin().read_line(&mut s).expect("Invalid string provided.");
     s.trim().to_string()
+}
+struct RuntimeOptions {
+    database: String,
+    namespace: String,
+    user: String,
+    pass: String,
+    address: String,
+}
+impl RuntimeOptions {
+    fn new(args: Vec<String>) -> Option<RuntimeOptions> {
+        let mut options: HashMap<String, String> = HashMap::new();
+        let string_options = vec!["address", "ns", "db", "user", "pass"];
+        for arg in args {
+            if arg.starts_with("--") {
+                let parts = arg.split("=").collect::<Vec<&str>>();
+    
+                if parts.len() < 2 { continue }
+                if parts.len() > 2 { continue }
+                
+                let key = parts[0].replace("--", "");
+                let value = parts[1];
+                
+                options.insert(key, value.to_string());
+            }
+        }
+        
+
+        for o in string_options {
+            if !options.contains_key(&o.to_owned()) {
+                println!("Missing --{} option.", o);
+                return None
+            }
+        }
+
+        Some(RuntimeOptions {
+            namespace: options.get("ns").unwrap().to_string(),
+            database: options.get("db").unwrap().to_string(),
+            address: options.get("address").unwrap().to_string(),
+            user: options.get("user").unwrap().to_string(),
+            pass: options.get("pass").unwrap().to_string()
+        })
+        
+    }   
 }
 
 fn main() -> std::io::Result<()> {
@@ -20,62 +64,43 @@ fn main() -> std::io::Result<()> {
     let mut args = env::args().collect::<Vec<String>>();
     args.remove(0);
 
-    // Arguments and default values
-    let mut address = "localhost:8000".to_string();
-    let mut namespace = "test".to_string();
-    let mut database = "test".to_string();
-    let mut user = "root".to_string();
-    let mut pass = "root".to_string();
-
-    // app.exe --arg=value
-    for arg in args {
-        if arg.starts_with("--") {
-            let parts = arg.split("=").collect::<Vec<&str>>();
-
-            if parts.len() < 2 { continue }
-            if parts.len() > 2 { continue }
-            
-            let key = parts[0].replace("--", "");
-            let value = parts[1];
-            
-            if key == "address" {
-                address=value.to_string()
-            }
-            if key == "ns" {
-                namespace=value.to_string()
-            }
-            if key == "db" {
-                database=value.to_string()
-            }
-            if key == "user" {
-                user=value.to_string()
-            }
-            if key == "pass" {
-                pass=value.to_string()
-            }
+    let options = RuntimeOptions::new(args);
+    match options {
+        Some(_) => {},
+        None => {
+            return Err(std::io::ErrorKind::Other.into());
         }
     }
+    let options = options.unwrap();
 
     // Initialize tcpstream
-    println!("Connecting to SurrealDB at {}", &address);
+    println!("Connecting to SurrealDB at {}", &options.address);
 
     let config = DbConfig {
-        database: database.clone(),
-        namespace: namespace.clone(),
-        user: user.clone(),
-        pass: pass.clone(),
-        address: address.clone(),
+        database: options.database.clone(),
+        namespace: options.namespace.clone(),
+        user: options.user.clone(),
+        pass: options.pass.clone(),
+        address: options.address.clone(),
     };
 
-    let mut handler = DbHandler::new(config);
+    let handler = DbHandler::new(config);
+    match handler {
+        Err(e) => {
+            return Err(e)
+        },
+        _ => {}
+    }
+    let mut handler = handler.unwrap();
+    
     
     loop {
-        let command = get_input(format!("SURREALDB @ {}>", address));
+        let command = get_input(format!("SURREALDB @ {}>", options.address));
         if command == "EXIT" {
             return Ok(())
         }
         
-        let response = handler.run_command(command.trim().to_string());
+        let response = handler.run_command(command.trim().to_string()).unwrap();
         let parsed_body = json::parse(&response.body).unwrap();
 
         // If there is a code found, this is an erorr response

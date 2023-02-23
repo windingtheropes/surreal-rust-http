@@ -1,4 +1,4 @@
-use std::io::{prelude::*};
+use std::io::{prelude::*, Error};
 use std::str;
 use std::net::TcpStream;
 use base64::{Engine as _, engine::{general_purpose}};
@@ -10,7 +10,7 @@ pub struct RequestResponse {
     pub body: String
 }
 impl RequestResponse {
-    fn new(data: [u8; BUF_SIZE]) -> RequestResponse {
+    fn new(data: [u8; BUF_SIZE]) -> Result<RequestResponse, Error> {
         let response = str::from_utf8(&data).unwrap();
 
         // Parse the response into two parts: headers and body
@@ -37,10 +37,16 @@ impl RequestResponse {
         }
 
          // Convert filtered_bytes to a utf8 string, giving the response body
-        let body = str::from_utf8(&filtered_bytes).unwrap().to_owned();
-        
+        let body = str::from_utf8(&filtered_bytes);
+        match body {
+            Err(e) => {
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Failed to read utf8 from bytes."));
+            }
+            _ => {}
+        }
+        let body = body.unwrap().to_owned();
         // let data = data.to_owned();
-        return RequestResponse { headers, body }
+        return Ok(RequestResponse { headers, body })
     }
 }
 pub struct DbConfig {
@@ -61,7 +67,7 @@ pub struct DbHandler {
     stream: TcpStream
 }
 impl DbHandler {
-    pub fn run_command(&mut self, command: String) -> RequestResponse {
+    pub fn run_command(&mut self, command: String) -> Result<RequestResponse, Error> {
         // Format headers and request, break lines at \r\n and split headers and body with \r\n\r\n
         let headers = vec![
             "POST /sql HTTP/1.1".to_string(),
@@ -81,13 +87,23 @@ impl DbHandler {
         
         // Read the response
         let mut buf = [0; BUF_SIZE];
-        self.stream.read(&mut buf[..]).unwrap();
-
-        return RequestResponse::new(buf)
+        match self.stream.read(&mut buf[..]) {
+            Err(e) => {
+                return Err(e)
+            },
+            _ => {}
+        }
+        return Ok(RequestResponse::new(buf).unwrap())
     }
-    pub fn new(config: DbConfig) -> DbHandler {
-        let stream = TcpStream::connect(&config.address).unwrap();
-        DbHandler { config, stream }
+    pub fn new(config: DbConfig) -> Result<DbHandler, Error> {
+        let stream = TcpStream::connect(&config.address);
+        match stream {
+            Err(e) => {
+                return Err(e)
+            },
+            _ => {}
+        }
+        Ok(DbHandler { config, stream: stream.unwrap() })
     }
 }
 
