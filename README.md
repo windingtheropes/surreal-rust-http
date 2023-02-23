@@ -2,7 +2,7 @@
 surreal-http is a straight-to-the-point library to manage your SurrealDB database in rust, supporting raw SurrealQL commands, and receiving responses.
 ## getting started
 Getting started with surreal-http is super simple:
-``` 
+```rust
     let address = String::from("localhost:8000");
     println!("Connecting to SurrealDB at {}", &address);
 
