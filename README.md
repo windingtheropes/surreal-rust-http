@@ -21,4 +21,7 @@ Getting started with surreal-http is super simple:
 # surreal cmd
 surreal-cmd is a simple command line application for querying and manipulating your SurrealDB database over http, with input and output functionality built in. 
 ## getting started
-To get started with surreal-cmd, download the executable, and then run it in your terminal of choice.
+To get started with surreal-cmd, download the executable, and then run it in your terminal of choice, filling in arguments for the address, database, namespace, and credentials such like below:
+```
+surrealCmd.exe --address=localhost:8000 --ns=test --db=test --user=root --pass=root
+```

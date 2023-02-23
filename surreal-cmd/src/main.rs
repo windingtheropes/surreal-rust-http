@@ -22,6 +22,11 @@ fn main() -> std::io::Result<()> {
 
     // Arguments and default values
     let mut address = "localhost:8000".to_string();
+    let mut namespace = "test".to_string();
+    let mut database = "test".to_string();
+    let mut user = "root".to_string();
+    let mut pass = "root".to_string();
+
     // app.exe --arg=value
     for arg in args {
         if arg.starts_with("--") {
@@ -36,6 +41,18 @@ fn main() -> std::io::Result<()> {
             if key == "address" {
                 address=value.to_string()
             }
+            if key == "ns" {
+                namespace=value.to_string()
+            }
+            if key == "db" {
+                database=value.to_string()
+            }
+            if key == "user" {
+                user=value.to_string()
+            }
+            if key == "pass" {
+                pass=value.to_string()
+            }
         }
     }
 
@@ -43,10 +60,10 @@ fn main() -> std::io::Result<()> {
     println!("Connecting to SurrealDB at {}", &address);
 
     let config = DbConfig {
-        database: "test".to_string(),
-        namespace: "test".to_string(),
-        user: "root".to_string(),
-        pass: "root".to_string(),
+        database: database.clone(),
+        namespace: namespace.clone(),
+        user: user.clone(),
+        pass: pass.clone(),
         address: address.clone(),
     };
 
