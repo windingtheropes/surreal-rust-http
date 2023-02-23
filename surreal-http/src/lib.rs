@@ -39,7 +39,7 @@ impl RequestResponse {
          // Convert filtered_bytes to a utf8 string, giving the response body
         let body = str::from_utf8(&filtered_bytes);
         match body {
-            Err(e) => {
+            Err(_e) => {
                 return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Failed to read utf8 from bytes."));
             }
             _ => {}

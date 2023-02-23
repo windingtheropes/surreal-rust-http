@@ -1,9 +1,7 @@
-use std::net::TcpStream;
 use std::io::{stdin, stdout, prelude::*};
 use std::env;
-use json::JsonValue::{self, Null};
-use json::object::{self};
-use surrealHttp::*;
+use json::JsonValue::{Null};
+use surreal_http::*;
 use std::collections::HashMap;
 
 fn get_input(prompt: String) -> String {
@@ -112,30 +110,42 @@ fn main() -> std::io::Result<()> {
             }
         }
 
-        // If the result is inside an array, the request worked
+        // If the result is inside an array, the request went through as SQL
         let interior = &parsed_body[0];
         if interior.to_owned() != Null {
             let status = &interior["status"];
             let time = &interior["time"];
-            let result = &interior["result"];
+            let result = &interior["result"]; // result for success
+            let detail = &interior["detail"]; // detail for errors
 
-            println!("{}{} in {}{}", "\u{001b}[36m", status, time, "\u{001b}[0m");
+            if status == "ERR" {
+                println!("{}{} in {}{}", "\u{001b}[33m", status, time, "\u{001b}[0m");
 
-            println!();
+                println!();
 
-            // split the result into lines, then print them on their own lines
-            // separate objects by another linebreak by checking char1 for an opening curly brace
-            let lines = result.to_string();
-            let lines = lines.split_inclusive(",").collect::<Vec<&str>>();
-
-            for line in lines {
-                if line.starts_with("{") {
-                    println!("\n{}", line);
-                }
-                else {
-                    println!("{}", line);
-                } 
+                println!("{}", detail);
             }
+            else if status == "OK" {
+                println!("{}{} in {}{}", "\u{001b}[36m", status, time, "\u{001b}[0m");
+
+                println!("{}", interior);
+
+                // split the result into lines, then print them on their own lines
+                // separate objects by another linebreak by checking char1 for an opening curly brace
+                let lines = result.to_string();
+                let lines = lines.split_inclusive(",").collect::<Vec<&str>>();
+
+                for line in lines {
+                    if line.starts_with("{") {
+                        println!("\n{}", line);
+                    }
+                    else {
+                        println!("{}", line);
+                    } 
+                }
+            }
+
+            
         }
         // println!("{}", &parsed_body);
     }
