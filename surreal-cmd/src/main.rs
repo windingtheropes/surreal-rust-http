@@ -51,13 +51,13 @@ fn main() -> std::io::Result<()> {
     };
 
     let mut handler = DbHandler::new(config);
-
+    
     loop {
         let command = get_input(format!("SURREALDB @ {}>", address));
         if command == "EXIT" {
             return Ok(())
         }
-
+        
         let response = handler.run_command(command.trim().to_string());
         let parsed_body = json::parse(&response.body).unwrap();
 
