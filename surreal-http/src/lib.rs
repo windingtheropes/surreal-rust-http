@@ -47,7 +47,8 @@ pub struct DbConfig {
     pub database: String,
     pub namespace: String, 
     pub user: String, 
-    pub pass: String
+    pub pass: String,
+    pub address: String,
 }
 impl DbConfig {
     fn get_auth_string(&self) -> String {
@@ -55,11 +56,11 @@ impl DbConfig {
     }
 }
 
-pub struct DbHandler<'a> {
+pub struct DbHandler {
     config: DbConfig,
-    stream: &'a mut TcpStream
+    stream: TcpStream
 }
-impl DbHandler<'_> {
+impl DbHandler {
     pub fn run_command(&mut self, command: String) -> RequestResponse {
         // Format headers and request, break lines at \r\n and split headers and body with \r\n\r\n
         let headers = vec![
@@ -84,7 +85,8 @@ impl DbHandler<'_> {
 
         return RequestResponse::new(buf)
     }
-    pub fn new(config: DbConfig, stream: &mut TcpStream) -> DbHandler {
+    pub fn new(config: DbConfig) -> DbHandler {
+        let stream = TcpStream::connect(&config.address).unwrap();
         DbHandler { config, stream }
     }
 }
